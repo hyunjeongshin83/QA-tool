@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<!-- QA Tool · MedIT -->
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>QA Tool · 웹 점검 도구</title>
+<meta name="description" content="주소를 넣으면 어느 웹페이지에나 점검 메모지가 붙습니다.">
+<style>
+:root{
+  --main:#2D6BE4;--main2:#4F87F0;--ok:#1F9254;--bad:#C0395C;
+  --ink:#14161c;--gray:#6b6f78;--line:rgba(255,255,255,.9);--glass:rgba(255,255,255,.7);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;
+  color:var(--ink);line-height:1.65;min-height:100svh;
+  padding:clamp(18px,4vw,40px) clamp(14px,4vw,22px) calc(60px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(880px 500px at 10% -6%,rgba(45,107,228,.13),transparent 62%),
+    radial-gradient(700px 420px at 94% 2%,rgba(120,200,255,.16),transparent 60%),
+    linear-gradient(180deg,#F7FAFF,#F3F6FD 48%,#FAFCFF);
+}
+a{color:inherit}
+button,input,select,textarea{font-family:inherit;font-size:16px}
+@media(min-width:1024px){button,input,select,textarea{font-size:14.5px}}
+img{max-width:100%;height:auto;display:block}
+.wrap{max-width:740px;margin:0 auto}
+
+.hero{text-align:center;margin-bottom:clamp(20px,4vw,32px)}
+.hero .eb{font-size:11px;letter-spacing:3.4px;font-weight:700;color:var(--main);display:block;margin-bottom:11px}
+.hero h1{font-size:clamp(24px,6vw,37px);font-weight:800;letter-spacing:-.04em;line-height:1.26;word-break:keep-all}
+.hero p{margin-top:11px;font-size:clamp(13.5px,3.2vw,15px);color:var(--gray);line-height:1.85;word-break:keep-all}
+
+.card{
+  background:var(--glass);border:1px solid var(--line);border-radius:22px;
+  padding:clamp(18px,4vw,26px);margin-bottom:13px;
+  backdrop-filter:blur(20px) saturate(125%);-webkit-backdrop-filter:blur(20px) saturate(125%);
+  box-shadow:0 12px 32px rgba(20,40,90,.07),inset 0 1px 0 rgba(255,255,255,.95);
+}
+.card h2{
+  font-size:10.5px;letter-spacing:1.9px;color:var(--gray);font-weight:700;text-transform:uppercase;
+  margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(0,0,0,.055)
+}
+.card h2 .n{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;border-radius:50%;background:var(--main);color:#fff;
+  font-size:10px;margin-right:7px;vertical-align:-3px
+}
+
+label{display:block;font-size:12.5px;font-weight:600;color:#4a4d55;margin:13px 0 6px}
+label:first-of-type{margin-top:0}
+input,select,textarea{
+  width:100%;min-height:50px;padding:13px 15px;border-radius:12px;
+  border:1px solid rgba(0,0,0,.09);background:rgba(255,255,255,.9);color:var(--ink)
+}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--main);outline-offset:-1px}
+.hintline{font-size:11.5px;color:var(--gray);margin-top:6px;line-height:1.75}
+.hintline code,.step code,p code{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;
+  background:rgba(0,0,0,.055);padding:2px 6px;border-radius:5px
+}
+
+.row{display:flex;gap:9px;flex-wrap:wrap;margin-top:15px}
+.row>*{flex:1 1 46%;min-width:150px}
+@media(max-width:640px){.row>*{flex:1 1 100%}}
+
+.btn{
+  min-height:52px;padding:0 22px;border:0;border-radius:999px;cursor:pointer;
+  font-size:14.5px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--main2),var(--main));
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 8px 20px rgba(45,107,228,.24);
+  transition:transform .18s cubic-bezier(.2,.7,.3,1),box-shadow .18s
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(45,107,228,.3)}
+.btn:active{transform:scale(.97)}
+.btn.sub{background:rgba(255,255,255,.94);color:var(--ink);border:1px solid rgba(0,0,0,.09);box-shadow:0 3px 12px rgba(0,0,0,.05)}
+
+.msg{margin-top:12px;font-size:13px;line-height:1.8;min-height:20px;color:var(--gray)}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+
+.mark{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:54px;padding:0 26px;border-radius:999px;
+  font-size:15px;font-weight:800;color:#fff;text-decoration:none;cursor:grab;user-select:none;
+  background:linear-gradient(135deg,#F5A623,#E9822B);box-shadow:0 8px 20px rgba(233,130,43,.28)
+}
+.mark:active{cursor:grabbing;transform:scale(.97)}
+
+.out{
+  margin-top:13px;padding:14px 15px;border-radius:13px;
+  background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.06);
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:11.5px;line-height:1.75;word-break:break-all;
+  max-height:220px;overflow-y:auto;white-space:pre-wrap
+}
+.out.hide{display:none}
+
+.ways{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.way{
+  padding:16px 17px;border-radius:16px;cursor:pointer;text-align:left;
+  border:1.5px solid rgba(0,0,0,.08);background:rgba(255,255,255,.7);
+  transition:border-color .18s,transform .18s,box-shadow .18s
+}
+.way:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(20,40,90,.08)}
+.way.on{border-color:var(--main);background:rgba(45,107,228,.06)}
+.way b{display:block;font-size:14px;font-weight:700;margin-bottom:5px}
+.way span{font-size:12px;color:var(--gray);line-height:1.7}
+.pane{display:none;margin-top:18px}
+.pane.on{display:block}
+
+.steps{counter-reset:s}
+.step{counter-increment:s;position:relative;padding:0 0 16px 38px;font-size:13.5px;line-height:1.85;color:#3a3d45}
+.step::before{
+  content:counter(s);position:absolute;left:0;top:1px;width:25px;height:25px;border-radius:50%;
+  background:linear-gradient(135deg,var(--main2),var(--main));color:#fff;
+  font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center
+}
+.step b{color:var(--ink)}
+.step:last-child{padding-bottom:0}
+
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:11px}
+.feat div{padding:13px 14px;border-radius:13px;background:rgba(255,255,255,.62);font-size:12.5px;line-height:1.75}
+.feat b{display:block;font-size:13px;margin-bottom:3px}
+
+.foot{text-align:center;font-size:11.5px;color:var(--gray);margin-top:24px;line-height:1.9}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="eb">QA TOOL</span>
+    <h1>내 웹페이지에<br>점검 메모지를 붙입니다</h1>
+    <p>주소만 넣으면 됩니다. 화면을 고치지 않아도 되고,<br>
+       이상한 곳을 짚어 이메일로 보낼 수 있습니다.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">1</span>점검 설정</h2>
+
+    <label for="site">웹페이지 주소</label>
+    <input id="site" type="url" inputmode="url" autocomplete="url"
+      placeholder="예) chewgumi.com 또는 localhost:3000">
+    <div class="hintline">
+      GitHub Pages · Netlify · Vercel · 카페24 · 일반 홈페이지 모두 됩니다.
+    </div>
+
+    <label for="mail">결과 받을 이메일</label>
+    <input id="mail" type="email" inputmode="email" autocomplete="email"
+      placeholder="예) me@example.com">
+    <div class="hintline">짚어 보낸 내용이 이 주소로 갑니다.</div>
+
+    <label for="who">이름 <span style="font-weight:400;color:var(--gray)">(선택)</span></label>
+    <input id="who" autocomplete="name" placeholder="누가 점검했는지 표시됩니다">
+  </div>
+
+  <div class="card">
+    <h2><span class="n">2</span>어떻게 쓰시겠어요</h2>
+
+    <div class="ways">
+      <button class="way on" data-w="link" onclick="pick('link')">
+        <b>주소로 열기</b>
+        <span>가장 간단합니다. 새 창이 열리고 메모지가 붙습니다.</span>
+      </button>
+      <button class="way" data-w="mark" onclick="pick('mark')">
+        <b>즐겨찾기로</b>
+        <span>어느 화면에서든 눌러서 띄웁니다. 사이트를 고치지 않아도 됩니다.</span>
+      </button>
+      <button class="way" data-w="embed" onclick="pick('embed')">
+        <b>화면에 붙이기</b>
+        <span>내 사이트라면 이게 편합니다. 코드 네 줄을 넣습니다.</span>
+      </button>
+      <button class="way" data-w="folder" onclick="pick('folder')">
+        <b>폴더로 받기</b>
+        <span>파일을 내려받아 내 서버에 두고 씁니다.</span>
+      </button>
+    </div>
+
+    <div class="pane on" id="p-link">
+      <div class="row">
+        <button class="btn" onclick="openSite()">점검 시작</button>
+        <button class="btn sub" onclick="copyLink()">주소 복사</button>
+      </div>
+      <div class="msg" id="m-link"></div>
+      <div class="out hide" id="o-link"></div>
+      <div class="hintline" style="margin-top:12px">
+        새 창이 막히면 [주소 복사]로 받은 주소를 직접 열어주세요.
+      </div>
+    </div>
+
+    <div class="pane" id="p-mark">
+      <p style="font-size:13.5px;line-height:1.85;color:#3a3d45;margin-bottom:15px">
+        아래 주황색 단추를 <b>즐겨찾기 막대로 끌어다</b> 놓으세요.<br>
+        점검하고 싶은 화면에서 그 즐겨찾기를 누르면 메모지가 뜹니다.
+      </p>
+      <div style="text-align:center;padding:6px 0">
+        <a class="mark" id="markBtn" href="#" onclick="return false">📝 점검 메모지</a>
+      </div>
+      <div class="row">
+        <button class="btn sub" onclick="copyMark()">주소 복사</button>
+        <button class="btn sub" onclick="markHelp()">만드는 방법</button>
+      </div>
+      <div class="msg" id="m-mark"></div>
+      <div class="out hide" id="o-mark"></div>
+    </div>
+
+    <div class="pane" id="p-embed">
+      <p style="font-size:13.5px;line-height:1.85;color:#3a3d45">
+        각 페이지의 <code>&lt;/body&gt;</code> 앞에 아래를 넣으세요.
+      </p>
+      <div class="out" id="o-embed"></div>
+      <div class="row">
+        <button class="btn sub" onclick="copyEmbed()">코드 복사</button>
+      </div>
+      <div class="msg" id="m-embed"></div>
+      <div class="hintline" style="margin-top:10px">
+        붙인 뒤 주소에 <code>?qa=1</code> 을 붙여 한 번 들어가면 켜집니다.
+        끄실 때는 <code>?qa=0</code> 입니다.
+      </div>
+    </div>
+
+    <div class="pane" id="p-folder">
+      <p style="font-size:13.5px;line-height:1.85;color:#3a3d45;margin-bottom:14px">
+        파일을 내려받아 내 서버나 저장소에 두고 쓰실 수 있습니다.
+      </p>
+      <div class="out">assets/
+  qa-on.js       점검 모드 유지
+  qa-pad.js      메모지 본체
+  qa-fill.js     입력칸 자동 채움
+  qa-mode.js     역할 전환
+  qa-report.js   접수 전송
+
+server/
+  schema.sql     접수함 표 (Supabase)
+  qa-server.ts   접수 서버
+  qa-kit.js      단독 실행본
+  README.md      서버 설명
+
+index.html       이 화면
+README.md        전체 안내</div>
+      <div class="row">
+        <button class="btn" onclick="location.href='qa-pad-tool.zip'">묶음 내려받기</button>
+        <button class="btn sub" onclick="location.href='https://github.com/hyunjeongshin83/QA-tool'">GitHub 에서 보기</button>
+      </div>
+      <div class="hintline" style="margin-top:12px">
+        내 서버에 두셨다면 <b>화면에 붙이기</b>의 주소를 그쪽으로 바꿔주세요.
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">3</span>무엇을 할 수 있나</h2>
+    <div class="feat">
+      <div><b>콕 집기</b>이상한 곳을 누르면 무엇을 짚었는지 자동으로 적힙니다</div>
+      <div><b>캡처</b>지금 화면을 담습니다. 길게 누르면 위아래 전체</div>
+      <div><b>값 채우기</b>이름·연락처·주소 등 모든 입력칸을 한 번에</div>
+      <div><b>화면 읽기</b>작은 글씨, 안 뜨는 이미지, 누르기 힘든 버튼을 찾습니다</div>
+      <div><b>자동 검증</b>그 화면이 제대로 작동할 준비가 됐는지 확인</div>
+      <div><b>이메일 전송</b>서버가 없어도 메일 앱으로 보냅니다</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2><span class="n">4</span>쓰는 순서</h2>
+    <div class="steps">
+      <div class="step"><b>주소와 이메일</b>을 넣습니다.</div>
+      <div class="step"><b>방식을 고르고</b> 시작합니다. 화면 오른쪽 위에 노란 메모지가 붙습니다.</div>
+      <div class="step"><b>[콕 집기]</b>로 이상한 곳을 짚습니다.</div>
+      <div class="step"><b>[캡처]</b>로 화면을 담습니다.</div>
+      <div class="step">내용을 적고 <b>[보내기]</b>를 누르면 이메일로 갑니다.</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    MedIT · 웹 점검 도구<br>
+    화면을 고치지 않아도 쓸 수 있습니다
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var HOST = location.origin + location.pathname.replace(/[^/]*$/, '');
+  var $ = function (id) { return document.getElementById(id); };
+
+  function say(id, t, k) {
+    var m = $('m-' + id); if (!m) return;
+    m.className = 'msg' + (k ? ' ' + k : ''); m.textContent = t;
+  }
+  function show(id, t) {
+    var o = $('o-' + id); if (!o) return;
+    o.textContent = t; o.classList.remove('hide');
+  }
+  function tidy(u) {
+    u = String(u || '').trim();
+    if (!u) return '';
+    if (!/^https?:\/\//i.test(u)) {
+      u = (/^(localhost|127\.|192\.168\.|10\.)/.test(u) ? 'http://' : 'https://') + u;
+    }
+    try { new URL(u); } catch (e) { return ''; }
+    return u;
+  }
+  function opts() {
+    return { site: tidy($('site').value), mail: $('mail').value.trim(), who: $('who').value.trim() };
+  }
+  function save(o) { try { localStorage.setItem('qatool', JSON.stringify(o)); } catch (e) {} }
+  function load() {
+    try {
+      var o = JSON.parse(localStorage.getItem('qatool') || '{}');
+      if (o.site) $('site').value = o.site;
+      if (o.mail) $('mail').value = o.mail;
+      if (o.who) $('who').value = o.who;
+    } catch (e) {}
+  }
+
+  window.pick = function (w) {
+    var ws = document.querySelectorAll('.way');
+    for (var i = 0; i < ws.length; i++) ws[i].classList.toggle('on', ws[i].dataset.w === w);
+    var ps = document.querySelectorAll('.pane');
+    for (var j = 0; j < ps.length; j++) ps[j].classList.toggle('on', ps[j].id === 'p-' + w);
+  };
+
+  function siteUrl() {
+    var o = opts();
+    var u = new URL(o.site);
+    u.searchParams.set('qa', '1');
+    if (o.mail) u.searchParams.set('qamail', o.mail);
+    if (o.who) u.searchParams.set('qawho', o.who);
+    u.searchParams.set('qasrc', HOST + 'assets/');
+    return u.toString();
+  }
+
+  function check() {
+    var o = opts();
+    if (!o.site) return '점검할 주소를 넣어주세요.';
+    if (!o.mail || o.mail.indexOf('@') < 0) return '결과 받을 이메일을 넣어주세요.';
+    save(o); return '';
+  }
+
+  window.openSite = function () {
+    var e = check(); if (e) { say('link', e, 'bad'); return; }
+    var u = siteUrl();
+    var w = window.open(u, '_blank', 'noopener');
+    if (!w) { say('link', '새 창이 막혔습니다. 아래 주소를 직접 여세요.', 'bad'); show('link', u); return; }
+    say('link', '새 창을 열었습니다.', 'ok'); show('link', u);
+  };
+
+  window.copyLink = function () {
+    var e = check(); if (e) { say('link', e, 'bad'); return; }
+    var u = siteUrl();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(u)
+        .then(function () { say('link', '복사했습니다.', 'ok'); })
+        .catch(function () { show('link', u); });
+    } else show('link', u);
+  };
+
+  function markCode() {
+    var o = opts();
+    return "javascript:(function(){window.QAPAD={mail:'" +
+      o.mail.replace(/'/g, '') + "',who:'" + o.who.replace(/'/g, '') +
+      "',src:'" + HOST + "assets/'};['qa-pad.js','qa-fill.js','qa-report.js']" +
+      ".forEach(function(f){var s=document.createElement('script');" +
+      "s.src=window.QAPAD.src+f;s.defer=true;document.body.appendChild(s);});})();";
+  }
+
+  window.copyMark = function () {
+    var o = opts();
+    if (!o.mail || o.mail.indexOf('@') < 0) { say('mark', '먼저 이메일을 넣어주세요.', 'bad'); return; }
+    save(o);
+    var c = markCode();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(c)
+        .then(function () { say('mark', '복사했습니다. 즐겨찾기 주소란에 붙여넣으세요.', 'ok'); })
+        .catch(function () { show('mark', c); });
+    } else show('mark', c);
+  };
+
+  window.markHelp = function () {
+    show('mark',
+      '컴퓨터 (크롬·엣지)\n' +
+      '  1. 즐겨찾기 막대에서 오른쪽 클릭 → 페이지 추가\n' +
+      '  2. 이름 : 점검 메모지\n' +
+      '  3. URL  : [주소 복사]한 내용 붙여넣기\n\n' +
+      '사파리\n' +
+      '  1. 즐겨찾기 → 즐겨찾기 편집\n' +
+      '  2. 새 항목의 주소란에 붙여넣기\n\n' +
+      '휴대폰\n' +
+      '  1. 아무 페이지나 즐겨찾기에 추가\n' +
+      '  2. 그 항목을 편집해 주소를 붙여넣기\n' +
+      '  3. 주소창에 이름을 쳐서 실행');
+    say('mark', '');
+  };
+
+  function embedCode() {
+    var o = opts();
+    return '<scr' + 'ipt>window.QAPAD={mail:"' + (o.mail || 'me@example.com') + '"};</scr' + 'ipt>\n' +
+      '<scr' + 'ipt src="' + HOST + 'assets/qa-on.js"></scr' + 'ipt>\n' +
+      '<scr' + 'ipt src="' + HOST + 'assets/qa-pad.js" defer></scr' + 'ipt>\n' +
+      '<scr' + 'ipt src="' + HOST + 'assets/qa-fill.js" defer></scr' + 'ipt>\n' +
+      '<scr' + 'ipt src="' + HOST + 'assets/qa-report.js" defer></scr' + 'ipt>';
+  }
+
+  window.copyEmbed = function () {
+    var c = embedCode();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(c)
+        .then(function () { say('embed', '복사했습니다.', 'ok'); })
+        .catch(function () { say('embed', '위 내용을 직접 복사하세요.'); });
+    } else say('embed', '위 내용을 직접 복사하세요.');
+  };
+
+  ['site', 'mail', 'who'].forEach(function (id) {
+    $(id).addEventListener('input', function () {
+      $('o-embed').textContent = embedCode();
+      $('markBtn').setAttribute('href', markCode());
+    });
+  });
+
+  load();
+  $('o-embed').textContent = embedCode();
+  $('markBtn').setAttribute('href', markCode());
+})();
+</script>
+</body>
+</html>
